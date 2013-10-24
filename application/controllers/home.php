@@ -3,6 +3,14 @@ require APPPATH.'libraries/simple_html_dom.php';
 /**
 * 
 */
+/**
+* 下载图片
+* 功能：php完美实现下载远程图片保存到本地
+* 参数：文件url,保存文件目录,保存文件名称，使用的下载方式
+* 当保存文件名称为空时则使用远程文件原来的名称
+*/
+
+//获取详细信息
 class pageOfCateory 
 {
 	function __construct($category)
@@ -18,25 +26,34 @@ class pageOfCateory
 	private $htmlDOM = '';
 	// url prefix
 	//private $urlPrefix = 'http://www.anyv.net/index.php/category-1';
-	private $urlPrefix = 'http://www.weixinhou.com/category/3619/0/vitality';
+	private $urlPrefix = 'http://www.weixinhou.com/category/';//3457/0/vitality#mark';
 	// 类别对应的url上的id
 	private $category = '';
 	// 当前页
 	private $pageNum = 0;
+	//分类页面url集合
+	private $cateUrl = array();
 	// 某个类别中的某一页里的链接集合
 	private $links = array();
 	// 链接容器
 	private $linkContainer = '.wx-list-1';
 
 	// 从页面中获取链接集合赋给links
-	//解析html页面
+
+	//解析分类页面html
 	private function setHtmlDom($pageNum)
 	{
-		$urlParams = $pageNum == 1 ? '#mark' : '/'.$pageNum.'#mark';
+		$urlParams = $pageNum == 1 ? '' : $pageNum;
 
-		$url = $this->urlPrefix . $urlParams;
+		$url = $this->urlPrefix . $this->category . '/0/vitality/' . $urlParams . '#mark';
+		echo '当前页面url：'.$url.'<br/>';
 		//$url = $this->urlPrefix;
 		$this->htmlDOM = file_get_html($url);
+	}
+	// 访问总页数的接口
+	public function getTotalPageNum()
+	{
+		return $this->totalPageNum;
 	}
 	//获取详细信息页面url
 	private function getLinksFromCurrentPage()
@@ -49,12 +66,6 @@ class pageOfCateory
 			array_push($this->links, $l->find('.pic',0)->href);
 		}		
 	}
-
-	// 访问总页数的接口
-	public function getTotalPageNum()
-	{
-		return $this->totalPageNum;
-	}
 	//获取当前页面分页数
 	private function setTotalPageNum()
 	{
@@ -64,9 +75,10 @@ class pageOfCateory
 							->childNodes();
 		$Nodes = $childNodes[count($childNodes)-2];
 		$this->totalPageNum = $Nodes->plaintext;
+		echo '分页数：'.$this->totalPageNum.'<br/>';
 	}
 	/*
-	*	从已经抓取的链接中获取信息
+	*	从已经抓取的链接中获取详细信息
 	*/
 	private function getInfomationFormLinks()
 	{
@@ -77,63 +89,77 @@ class pageOfCateory
 			$data = array();
 
 			foreach ($this->links as $links) {
-				$html = file_get_html($links);
-				if(!($html->find('.dialog'))){
-				//$webChatInfo['name'] = $html->find($root_SLT,0)
-											// ->find($extInfo_SLT,0)
-											// ->first_child()
-											// ->plaintext;
-
-				//$webChatInfo['content'] = $html->find($root_SLT,0)
-												// ->find($extInfo_SLT,0)
-												// ->plaintext;
-
-				// $id = $html->find($root_SLT,0)->find($extInfo_SLT,0)->plaintext;
-				// $id = preg_replace('/[\x{4e00}-\x{9fa5}]/iu', '',$id);
-				// $id = preg_replace('/[,:：]/', '', $id);
-				// $id = preg_replace("/<(.*?)>/","", $id); 
-				// $webChatInfo['wechatid'] = trim($id);
+				if($links){
+					$html = file_get_html($links);
+				}
+				if($html&&!$html->find('.dialog')){
 
 				$webChatInfo['name']=$html->find('.app-txt',0)->find('.name',0)->plaintext;
 				//获取微信id
 				$id = $html->find('.app-dati',0)->find('li',0)->last_child()->plaintext;
 				$webChatInfo['wechatid'] = trim($id);
-				//$children = $html->find($root_SLT,0)->childNodes();
 				// 获取微信账号的描述
 				$des = $html->find('.acc-desc',0)->find('p',0)->plaintext;
-				// $des = '';
-				// foreach ($children as $val) {
-				// 	if(!$val->hasAttribute('id') && !$val->hasAttribute('class')) {
-				// 		$des .= $val->plaintext;
-				// 	}
-				// }
 				//描述信息
 				$webChatInfo['des'] = $des;
-				//图片
+				//图片url
 				$webChatInfo['codeimg'] = $html->find('.code-img',0)->find('img',0) 
 										? $html->find('.code-img',0)->find('img',0)->src 
 										:  '';
-
+				
+				//下载图片
+				$ext = strrchr($webChatInfo['codeimg'], '.');
+				//存储路径
+				$save_dir = $this->category.'/';
+				//文件名
+				$filename = md5(time() . 'www' . rand(1000,2000)) . $ext;
+				//下载并存储图片
+				$this->getImgByUrl($links,$webChatInfo['codeimg'],$save_dir,$filename);
+				
 				$webChatInfo['codethumb'] = str_replace('.jpg', '.thumb.jpg', $webChatInfo['codeimg']);
+				$webChatInfo['type'] = $this->category;
 				$webChatInfo['date'] = time();
+				$webChatInfo['imgPath'] = $save_dir.$filename;
 				array_push($data, $webChatInfo);
 
-				echo $webChatInfo['name'] . '--'.$webChatInfo['wechatid'].'--'. $webChatInfo['des'].' '. count($data) . '<br/>';
+				echo '<span style=color:red;>'.count($data) . '、</span>' . $webChatInfo['name'] . '：<span style=color:blue;>'. $webChatInfo['wechatid'] . '</span> | <span style="color:lightblue";> '.$webChatInfo['des'].'</span> | <br/> <script>window.scrollTo(0,document.body.scrollHeight)</script>';
+				
 				flush();
 				ob_flush();
 				}
 			}
 			return $data;
-			// var_dump($data);
+			var_dump($data);
 			// foreach ($data as $d) {
 			// 	$ret['wechatid'] = $d['wechatid'];
 			// 	$ret['wechatdes'] = $d['des'];
-			// 	$ret['date'] = time();
+			// 	//$ret['date'] = time();
 			// 	$ret['imgurl'] = $d['codeimg'];
 
 			// 	$this->storeToDB($ret);
 			// }
 		}
+	}
+	//下载并保存图片
+	public function getImgByUrl($pageUrl,$imgUrl,$save_dir,$filename){
+		$ch = curl_init();
+		if(!file_exists($save_dir) && !mkdir($save_dir,0777,true)){
+			mkdir($save_dir,0777,true);
+		}
+		$fp = fopen($save_dir.$filename, "w");
+		curl_setopt($ch, CURLOPT_FILE, $fp);
+		$options = array(
+			//需要抓取的图片路径
+			CURLOPT_URL => $imgUrl,
+			//是否当前页面输出
+			CURLOPT_HEADER => false,
+			//伪造  CURLOPT_REFERER 地址
+			CURLOPT_REFERER=>$pageUrl,
+			);
+		curl_setopt_array($ch, $options);
+		curl_exec($ch);
+		curl_close($ch);
+		fclose($fp);
 	}
 
 	public function getData()
@@ -157,7 +183,7 @@ class Home extends CI_Controller
 	{
 		parent::__construct();
 		//$this->generateUrl();
-		//$this->load->model('Wechat_model','model');
+		$this->load->model('Wechat_model','model');
 	}
 
 	private $categoryPageNum = 0;
@@ -167,26 +193,27 @@ class Home extends CI_Controller
 	private $urlArr = array();
 
 	private $categoryArray = array(
-			//交友社区
-			'3619/0/vitality',
-			//资讯阅读
-			'2',
-			//影音娱乐
-			'51',
-			//生活购物
-			'19',
-			//网络科技
-			'3',
-			//文化教育
-			'20',
-			//本地服务
-			'',
-			//网站相关
+			//交友
+			'3619',
+			//资讯
+			'3455',
+			//娱乐
+			'3457',
+			//生活
+			'3456',
+			//网络
+			'3461',
+			//教育
+			'3458',
+			//本地
+			'3459',
+			//网站
+			'3460'
 		);
 
 	private function generateUrl() {
 		foreach ($this->categoryArray as $id) {
-			array_push($this->urlArr, $this->catePrefix . $id);
+			array_push($this->urlArr, $this->catePrefix . $id . '/0/vitality#mark');
 		}
 		print_r($this->urlArr);
 	}
@@ -195,7 +222,7 @@ class Home extends CI_Controller
 	{
 		header("Content-type: text/html; charset=utf-8");
 		// $beginPage = 1;
-		$handler = new pageOfCateory(1);
+		$handler = new pageOfCateory(3619);
 		// $totalPageNum = $handler->getTotalPageNum();
 		// while ($beginPage <= $totalPageNum) {
 			
@@ -205,9 +232,13 @@ class Home extends CI_Controller
 			$ret['wechatid'] = $d['wechatid'];
 			$ret['wechatdes'] = $d['des'];
 			//$ret['date'] = time();
+			$ret['wechatname'] = $d['name'];
 			$ret['imgurl'] = $d['codeimg'];
+			$ret['wechatType'] = $d['type'];
+			$ret['wechatImgPath'] = $d['imgPath'];
 
-			//$this->storeToDB($ret);
+			$this->storeToDB($ret);
+			$this->dbTest();
 		}
 	}
 
@@ -218,6 +249,10 @@ class Home extends CI_Controller
 
 	public function dbTest() 
 	{
+		$imgUrls = $this->model->getUrlsByCategory(3619);
+        $img = new Image(3619,'3619');
+        $img->downloadImgFromList($imgUrls);
+
 		//$this->load->model('Wechat_model','model');
 		// $d['wechatid'] = 'fuck';
 		// $d['des'] = 'fuck you';
@@ -230,4 +265,12 @@ class Home extends CI_Controller
 
 		// $this->model->storeWechatInfo($ret);
 	}
+	public function test()
+    {
+        $val = "wwwww                 xxxxx";
+        //$val = str_replace(array(' ','&nbsp;'),'',$val);
+        $ret = preg_split('/ /',$val);
+        $r = $ret[0] . ' ' . $ret[count($ret) - 1];
+        echo $r;
+    }
 }

@@ -14,6 +14,9 @@ class Wechat_model extends CI_Model {
 	*/
 	public function storeWechatInfo($data)
 	{
+        echo 'in';
+        flush();
+        ob_flush();
 		$tag = !empty($data) && count($data) != 0;
 		if($tag) {
 			try {
@@ -25,5 +28,21 @@ class Wechat_model extends CI_Model {
 				echo $e->errorMessage();
 			}
 		}	
+	}
+
+    /*
+     * 通过找到某个类别下的所有url
+     */
+	public function getUrlsByCategory($category)
+	{
+		$this->db
+            ->select('imgurl,wechatid')
+            ->from('info')
+            ->where('wechatType',$category);
+        $query = $this->db->get();
+        //var_dump($query->result());
+        //echo $this->db->last_query();
+        //var_dump($query->result());
+        return $query->result();
 	}
 }
