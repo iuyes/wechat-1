@@ -11,7 +11,7 @@ require APPPATH.'libraries/simple_html_dom.php';
 */
 
 //获取详细信息
-class pageOfCateory 
+class pageOfCateory
 {
 	function __construct($category)
 	{
@@ -19,6 +19,9 @@ class pageOfCateory
 		$this->setHtmlDom(1);
 		$this->setTotalPageNum();
 		//echo 'pageNum' . $this->totalPageNum;
+	}
+	public function pageInit(){
+		echo "string";
 	}
 	// 总页数
 	private $totalPageNum = '';
@@ -222,7 +225,13 @@ class Home extends CI_Controller
 	{
 		header("Content-type: text/html; charset=utf-8");
 		// $beginPage = 1;
-		$handler = new pageOfCateory(3619);
+		$handler = new pageOfCateory(3459);
+		
+		// foreach ($categoryArray as $cateId) {
+		// 	$handler = new pageOfCateory($cateId);
+			
+		// }
+		//$handler->pageInit();
 		// $totalPageNum = $handler->getTotalPageNum();
 		// while ($beginPage <= $totalPageNum) {
 			
@@ -238,7 +247,7 @@ class Home extends CI_Controller
 			$ret['wechatImgPath'] = $d['imgPath'];
 
 			$this->storeToDB($ret);
-			$this->dbTest();
+			
 		}
 	}
 
