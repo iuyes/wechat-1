@@ -105,8 +105,8 @@ class pageOfCateory
 				$des = $html->find('.acc-desc',0)->find('p',0)->plaintext;
 				//描述信息
 				$webChatInfo['des'] = $des;
-				//微信号类别
-				$type = $html->find('.idx-title',0)->find('.title',0)->children(3)->plaintext;
+				//微信号类别////
+				$webChatInfo['type'] = $html->find('.idx-title',0)->find('.title',0)->children(3)->plaintext;
 				echo $webChatInfo['type'];
 				//图片url
 				$webChatInfo['codeimg'] = $html->find('.code-img',0)->find('img',0) 
