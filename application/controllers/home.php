@@ -105,6 +105,9 @@ class pageOfCateory
 				$des = $html->find('.acc-desc',0)->find('p',0)->plaintext;
 				//描述信息
 				$webChatInfo['des'] = $des;
+				//微信号类别
+				$type = $html->find('.idx-title',0)->find('.title',0)->children(3)->plaintext;
+				echo $webChatInfo['type'];
 				//图片url
 				$webChatInfo['codeimg'] = $html->find('.code-img',0)->find('img',0) 
 										? $html->find('.code-img',0)->find('img',0)->src 
@@ -120,7 +123,6 @@ class pageOfCateory
 				$this->getImgByUrl($links,$webChatInfo['codeimg'],$save_dir,$filename);
 				
 				$webChatInfo['codethumb'] = str_replace('.jpg', '.thumb.jpg', $webChatInfo['codeimg']);
-				$webChatInfo['type'] = $this->category;
 				$webChatInfo['date'] = time();
 				$webChatInfo['imgPath'] = $save_dir.$filename;
 				array_push($data, $webChatInfo);
@@ -225,12 +227,12 @@ class Home extends CI_Controller
 	{
 		header("Content-type: text/html; charset=utf-8");
 		// $beginPage = 1;
-		$handler = new pageOfCateory(3459);
+		//$handler = new pageOfCateory($this->categoryArray);
 		
-		// foreach ($categoryArray as $cateId) {
-		// 	$handler = new pageOfCateory($cateId);
+		foreach ($this->categoryArray as $cateId) {
+			$handler = new pageOfCateory($cateId);
 			
-		// }
+		
 		//$handler->pageInit();
 		// $totalPageNum = $handler->getTotalPageNum();
 		// while ($beginPage <= $totalPageNum) {
@@ -248,6 +250,7 @@ class Home extends CI_Controller
 
 			$this->storeToDB($ret);
 			
+			}
 		}
 	}
 
